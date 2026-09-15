@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "mobile",
+    "name": "开黑",
     "slug": "mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -16,10 +16,19 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.bai0010.mobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "99bb9117-9a75-4fae-af48-392340d69542"
+      }
     }
   }
 }
