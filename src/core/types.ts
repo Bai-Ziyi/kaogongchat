@@ -24,6 +24,18 @@ export interface Message {
   sticker?: StickerKey;
 }
 
+/**
+ * 聊天人设。头像存的是拷进 App 目录后的本地路径，不是相册里的临时路径 ——
+ * 临时路径会被系统清掉，重启就成了空白头像。
+ */
+export interface Persona {
+  name: string;
+  /** 对方头像；null 表示用内置的默认图 */
+  theirAvatar: string | null;
+  /** 自己的头像；null 表示灰色占位 */
+  myAvatar: string | null;
+}
+
 /** 题目已经发出去，等作答 */
 export type Phase = 'answering' | 'halted' | 'idle' | 'exhausted';
 

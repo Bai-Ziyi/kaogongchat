@@ -7,8 +7,9 @@ import type { Question } from '../fenbi/types';
 import * as cache from './cache';
 import { idleBeat, praiseBeat, type Chatter } from './chatter';
 import { nextId } from './id';
+import { DEFAULT_PERSONA, loadPersona, savePersona } from './profile';
 import { seedMessages } from './seed';
-import type { Message, Phase } from './types';
+import type { Message, Persona, Phase } from './types';
 
 /** 单条消息的文本上限，超过就按句号断开发 */
 const STEM_CHUNK = 72;
@@ -36,6 +37,7 @@ export interface AppState {
   notice: Notice | null;
   stats: { right: number; wrong: number };
   keypointId: number;
+  persona: Persona;
 }
 
 function defaultKeypoint(): number {
@@ -51,6 +53,7 @@ let store: AppState = {
   notice: null,
   stats: { right: 0, wrong: 0 },
   keypointId: defaultKeypoint(),
+  persona: DEFAULT_PERSONA,
 };
 
 /** 题目池：游标之前的都已经发到聊天里了 */
@@ -264,6 +267,7 @@ async function initialMessages(): Promise<Message[]> {
 export async function bootstrap(): Promise<void> {
   const cookie = await getCookie();
   const saved = await cache.loadSession();
+  const persona = await loadPersona();
 
   if (saved) {
     pool = saved.pool ?? [];
@@ -276,9 +280,10 @@ export async function bootstrap(): Promise<void> {
       phase: saved.phase ?? 'idle',
       signedIn: !!cookie,
       ready: true,
+      persona,
     });
   } else {
-    patch({ messages: await initialMessages(), signedIn: !!cookie, ready: true });
+    patch({ messages: await initialMessages(), signedIn: !!cookie, ready: true, persona });
   }
 
   // 上次退出时题目还在屏幕上，重启后接着答就行，别重发一遍
@@ -305,6 +310,13 @@ export async function signIn(raw: string): Promise<void> {
 export async function signOut(): Promise<void> {
   await clearCookie();
   patch({ signedIn: false, notice: null });
+}
+
+/** 人设改了就立刻落盘 —— 换头像是低频操作，没必要省这一次写 */
+export async function setPersona(next: Partial<Persona>): Promise<void> {
+  const persona = { ...store.persona, ...next };
+  patch({ persona });
+  await savePersona(persona);
 }
 
 export async function useKeypoint(keypointId: number): Promise<void> {

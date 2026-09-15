@@ -1,6 +1,9 @@
 import type { ImageSourcePropType } from 'react-native';
 
-/** 伪装人设。改这里就能换掉聊天对象。 */
+/**
+ * 人设的出厂值。运行时可以在「昵称与头像」里改，存在本地，重启还在；
+ * 这里只在没设置过的时候兜底 —— 头像同理，换过就顶掉这张。
+ */
 export const PERSONA = {
   name: '人明星稀-王者荣耀',
   avatarSource: require('../assets/头像.jpg') as ImageSourcePropType,

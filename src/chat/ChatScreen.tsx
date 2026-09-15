@@ -14,7 +14,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { KEYPOINTS, PERSONA, THEME } from '../config';
+import { KEYPOINTS, THEME } from '../config';
 import { getState, reset, retry, signOut, submit, subscribe, useKeypoint } from '../core/store';
 import type { Message } from '../core/types';
 import { MessageBubble } from './MessageBubble';
@@ -28,7 +28,13 @@ function withTimeFlags(messages: Message[]): { message: Message; showTime: boole
   }));
 }
 
-export function ChatScreen({ onOpenSettings }: { onOpenSettings: () => void }) {
+export function ChatScreen({
+  onOpenSettings,
+  onOpenProfile,
+}: {
+  onOpenSettings: () => void;
+  onOpenProfile: () => void;
+}) {
   const state = useSyncExternalStore(subscribe, getState);
   const [draft, setDraft] = useState('');
   const [sheet, setSheet] = useState<'none' | 'menu' | 'keypoint'>('none');
@@ -59,11 +65,13 @@ export function ChatScreen({ onOpenSettings }: { onOpenSettings: () => void }) {
       <StatusBar style="dark" />
 
       <View style={[styles.header, { paddingTop: insets.top + 6 }]}>
-        <Text style={styles.back}>‹</Text>
+        <View style={styles.side}>
+          <Text style={styles.back}>‹</Text>
+        </View>
         <Text style={styles.title} numberOfLines={1}>
-          {PERSONA.name}
+          {state.persona.name}
         </Text>
-        <TouchableOpacity style={styles.more} onPress={() => setSheet('menu')} hitSlop={8}>
+        <TouchableOpacity style={styles.side} onPress={() => setSheet('menu')} hitSlop={8}>
           <Text style={styles.moreText}>···</Text>
         </TouchableOpacity>
       </View>
@@ -89,7 +97,10 @@ export function ChatScreen({ onOpenSettings }: { onOpenSettings: () => void }) {
           ref={listRef}
           data={rows}
           keyExtractor={(item) => item.message.id}
-          renderItem={({ item }) => <MessageBubble message={item.message} showTime={item.showTime} />}
+          renderItem={({ item }) => (
+            <MessageBubble message={item.message} showTime={item.showTime} persona={state.persona} />
+          )}
+          extraData={state.persona}
           contentContainerStyle={styles.listContent}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
           keyboardDismissMode="interactive"
@@ -123,10 +134,11 @@ export function ChatScreen({ onOpenSettings }: { onOpenSettings: () => void }) {
           <Pressable style={styles.sheet} onPress={() => {}}>
             {sheet === 'menu' ? (
               <>
-                <Text style={styles.sheetTitle}>{PERSONA.name}</Text>
+                <Text style={styles.sheetTitle}>{state.persona.name}</Text>
                 <Text style={styles.sheetMeta}>
                   本次答对 {state.stats.right} 题，答错 {state.stats.wrong} 题
                 </Text>
+                <SheetRow label="昵称与头像" onPress={() => { setSheet('none'); onOpenProfile(); }} />
                 <SheetRow label={`当前内容：${KEYPOINTS[state.keypointId] ?? '未选择'}`} onPress={() => setSheet('keypoint')} />
                 <SheetRow label="清空聊天记录" onPress={() => { setSheet('none'); void reset(); }} />
                 <SheetRow label="账号" onPress={() => { setSheet('none'); onOpenSettings(); }} />
@@ -183,13 +195,22 @@ const styles = StyleSheet.create({
     backgroundColor: THEME.headerBg,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: THEME.headerBorder,
-    paddingBottom: 10,
+    paddingBottom: 8,
     paddingHorizontal: 12,
   },
-  back: { color: '#4A4A4A', fontSize: 28, width: 30, lineHeight: 30 },
-  title: { flex: 1, textAlign: 'center', color: THEME.text, fontSize: 17, fontWeight: '500' },
-  more: { width: 30, alignItems: 'flex-end' },
-  moreText: { color: '#4A4A4A', fontSize: 20, lineHeight: 22 },
+  // 两侧给等宽定高的槽，标题才是真正居中；点按区域也一并变大
+  side: { width: 44, height: 40, alignItems: 'center', justifyContent: 'center' },
+  // includeFontPadding 关掉，否则 Android 会给文字加额外的上下留白，看着就偏了
+  back: { color: '#4A4A4A', fontSize: 26, lineHeight: 30, includeFontPadding: false },
+  title: {
+    flex: 1,
+    textAlign: 'center',
+    color: THEME.text,
+    fontSize: 17,
+    fontWeight: '500',
+    includeFontPadding: false,
+  },
+  moreText: { color: '#4A4A4A', fontSize: 20, lineHeight: 22, includeFontPadding: false },
   notice: { backgroundColor: '#FBF0C8', paddingVertical: 6, paddingHorizontal: 12 },
   noticeText: { color: '#8A6D1F', fontSize: 13 },
   body: { flex: 1 },

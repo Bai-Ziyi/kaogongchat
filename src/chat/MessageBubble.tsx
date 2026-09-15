@@ -1,6 +1,6 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { PERSONA, THEME } from '../config';
-import type { Message, StickerKey } from '../core/types';
+import type { Message, Persona, StickerKey } from '../core/types';
 import { RichText } from './RichText';
 import { stickerSize, stickerSource } from './stickers';
 
@@ -11,29 +11,40 @@ export function formatTime(at: number): string {
   return `${hh}:${mm}`;
 }
 
-function Avatar({ mine }: { mine: boolean }) {
-  if (!mine) {
-    return <Image source={PERSONA.avatarSource} style={styles.avatar} resizeMode="cover" />;
+/** 自己那头像是可选的，没设就退回灰色占位 —— 有头像才更像真的聊天 */
+function Avatar({ mine, persona }: { mine: boolean; persona: Persona }) {
+  const custom = mine ? persona.myAvatar : persona.theirAvatar;
+  if (custom) return <Image source={{ uri: custom }} style={styles.avatar} resizeMode="cover" />;
+  if (mine) {
+    return (
+      <View style={[styles.avatar, styles.avatarFallback]}>
+        <Text style={styles.avatarLetter}>我</Text>
+      </View>
+    );
   }
-  return (
-    <View style={[styles.avatar, styles.avatarFallback]}>
-      <Text style={styles.avatarLetter}>我</Text>
-    </View>
-  );
+  return <Image source={PERSONA.avatarSource} style={styles.avatar} resizeMode="cover" />;
 }
 
 function Sticker({ name }: { name: StickerKey }) {
   return <Image source={stickerSource(name)} style={stickerSize(name)} resizeMode="contain" />;
 }
 
-export function MessageBubble({ message, showTime }: { message: Message; showTime: boolean }) {
+export function MessageBubble({
+  message,
+  showTime,
+  persona,
+}: {
+  message: Message;
+  showTime: boolean;
+  persona: Persona;
+}) {
   const mine = message.dir === 'out';
 
   return (
     <View>
       {showTime ? <Text style={styles.time}>{formatTime(message.at)}</Text> : null}
       <View style={[styles.row, mine ? styles.rowMine : styles.rowTheirs]}>
-        {!mine ? <Avatar mine={false} /> : null}
+        {!mine ? <Avatar mine={false} persona={persona} /> : null}
 
         <View style={styles.bubbleWrap}>
           {/* 表情包没有气泡底，微信就是这么显示的 */}
@@ -49,7 +60,7 @@ export function MessageBubble({ message, showTime }: { message: Message; showTim
           )}
         </View>
 
-        {mine ? <Avatar mine /> : null}
+        {mine ? <Avatar mine persona={persona} /> : null}
       </View>
     </View>
   );
